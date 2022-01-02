@@ -1,0 +1,38 @@
+{
+  "name": "remix-graphql",
+  "version": "0.0.0",
+  "description": "Utilities for using GraphQL with a Remix app",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "Thomas Heyenbrock <thomas.heyenbrock@gmail.com>",
+  "license": "MIT",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "yarn build:clean && yarn build:code && yarn build:types",
+    "build:clean": "rm -r dist",
+    "build:code": "esbuild src/index.ts --bundle --platform=node --external:graphql --external:graphql-helix --external:remix --outfile=dist/index.js",
+    "build:types": "tsc",
+    "format": "prettier --write .",
+    "prepare": "install-peers && remix setup node"
+  },
+  "dependencies": {
+    "graphql": "^16.2.0",
+    "graphql-helix": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/react": "^17.0.38",
+    "@types/react-dom": "^17.0.11",
+    "esbuild": "^0.14.10",
+    "install-peers-cli": "^2.2.0",
+    "prettier": "^2.5.1",
+    "typescript": "^4.1.2"
+  },
+  "peerDependencies": {
+    "@remix-run/dev": "^1.0.0",
+    "@remix-run/react": "^1.0.0",
+    "@remix-run/serve": "^1.0.0",
+    "remix": "^1.0.0"
+  }
+}
