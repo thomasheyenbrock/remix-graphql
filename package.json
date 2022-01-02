@@ -15,6 +15,9 @@
     "@remix-run/react": "^1.1.1",
     "@remix-run/serve": "^1.1.1",
     "bcryptjs": "^2.4.3",
+    "gqtx": "^0.8.1",
+    "graphql": "^16.2.0",
+    "graphql-helix": "^1.11.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "remix": "^1.1.1"
