@@ -23,15 +23,16 @@ First, create your GraphQL schema with your method of choice: Vanilla
 a `GraphQLSchema` object. Create some module that exports this schema,
 for example under `~/graphql/schema.ts`.
 
-Second, install `remix-graphql` with your preferred package manager. It lists
-some of the Remix-packages as peer dependencies, but you should already have
-them installed after setting up a Remix project with the CLI.
+Second, install `remix-graphql` and the `graphql` package with your preferred
+package manager. It lists some of the Remix-packages as peer dependencies, but
+you should already have them installed after setting up a Remix project with
+the CLI.
 
 ```sh
 # Using `npm`
-npm install remix-graphql
+npm install graphql remix-graphql
 # Or using `yarn`
-yarn add remix-graphql
+yarn add graphql remix-graphql
 ```
 
 Third (and already last), create a file for your resource route, e.g.

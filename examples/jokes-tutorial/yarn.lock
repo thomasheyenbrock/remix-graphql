@@ -2704,7 +2704,6 @@ remark-rehype@^9.0.0:
 remix-graphql@../..:
   version "0.0.1"
   dependencies:
-    graphql "^16.2.0"
     graphql-helix "^1.11.0"
 
 remix@^1.1.1:
