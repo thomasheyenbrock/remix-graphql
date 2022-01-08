@@ -10,17 +10,18 @@
     "type": "git",
     "url": "https://github.com/thomasheyenbrock/remix-graphql.git"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "index.server.js",
+  "types": "index.server.d.ts",
   "author": "Thomas Heyenbrock <thomas.heyenbrock@gmail.com>",
   "license": "MIT",
   "files": [
-    "dist/**"
+    "index.server.js",
+    "*.d.ts"
   ],
   "scripts": {
     "build": "yarn build:clean && yarn build:code && yarn build:types",
-    "build:clean": "rm -r dist",
-    "build:code": "esbuild src/index.ts --bundle --platform=node --external:graphql --external:graphql-helix --external:remix --outfile=dist/index.js",
+    "build:clean": "rm -f *.d.ts index.server.js",
+    "build:code": "esbuild src/index.server.ts --bundle --platform=node --external:graphql --external:graphql-helix --external:remix --outfile=index.server.js",
     "build:types": "tsc",
     "format": "prettier --write .",
     "prepare": "install-peers && remix setup node"

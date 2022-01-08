@@ -6,10 +6,10 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "target": "ES2015",
+    "target": "ESNext",
     "strict": true,
     "baseUrl": "src",
-    "outDir": "dist",
+    "outDir": ".",
     "declaration": true,
     "emitDeclarationOnly": true
   }

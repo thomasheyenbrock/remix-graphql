@@ -40,7 +40,10 @@ Third (and already last), create a file for your resource route, e.g.
 yourself a working GraphQL API that supports GET and POST requests! 🥳
 
 ```ts
-import { createActionFunction, createLoaderFunction } from "remix-graphql";
+import {
+  createActionFunction,
+  createLoaderFunction,
+} from "remix-graphql/index.server";
 
 // Import your schema from whereever you put it
 import { schema } from "~/graphql/schema";
@@ -63,7 +66,7 @@ GraphQL requests via POST.
 
 ```tsx
 // app/routes/graphql.ts
-import { createActionFunction } from "remix-graphql";
+import { createActionFunction } from "remix-graphql/index.server";
 import schema from "~/graphql/schema.ts";
 
 export const action = createActionFunction({ schema });
@@ -87,7 +90,7 @@ GraphQL requests via GET.
 
 ```tsx
 // app/routes/graphql.ts
-import { createLoaderFunction } from "remix-graphql";
+import { createLoaderFunction } from "remix-graphql/index.server";
 import schema from "~/graphql/schema.ts";
 
 export const loader = createLoaderFunction({ schema });
