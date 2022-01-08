@@ -7,7 +7,7 @@ import { handleRequest } from "./handle-request";
 async function parseBody(
   request: Request
 ): Promise<
-  { type: "success"; json: string } | { type: "error"; message: string }
+  { type: "success"; json: unknown } | { type: "error"; message: string }
 > {
   const { body } = request;
   const isReadable = body instanceof Readable;
