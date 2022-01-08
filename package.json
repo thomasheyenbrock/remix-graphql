@@ -1,6 +1,6 @@
 {
   "name": "remix-graphql",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Utilities for using GraphQL with a Remix app",
   "keywords": [
     "remix",
