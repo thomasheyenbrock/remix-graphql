@@ -6,7 +6,7 @@
   "scripts": {
     "build": "remix build",
     "dev": "remix dev",
-    "postinstall": "remix setup node",
+    "postinstall": "remix setup node && rm -rf node_modules/remix-graphql/node_modules",
     "start": "remix-serve build"
   },
   "dependencies": {
@@ -20,7 +20,7 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "remix": "^1.1.1",
-    "remix-graphql": "^0.0.1"
+    "remix-graphql": "../.."
   },
   "devDependencies": {
     "@remix-run/dev": "^1.1.1",

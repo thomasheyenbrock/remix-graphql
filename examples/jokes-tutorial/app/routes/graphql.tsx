@@ -2,7 +2,7 @@ import {
   DeriveStatusCodeFunction,
   getActionFunction,
   getLoaderFunction,
-} from "remix-graphql-test-thomas";
+} from "remix-graphql";
 import { schema } from "~/graphql/schema";
 
 function hasStatus(error: any): error is { status: number } {
