@@ -1,6 +1,9 @@
 import bcryptjs from "bcryptjs";
-import { createCookieSessionStorage, redirect } from "remix";
+import { GraphQLError } from "graphql";
+import { createCookieSessionStorage } from "remix";
+import { Context } from "remix-graphql/index.server";
 import { db } from "./db.server";
+import { ErrorCode } from "./error-codes";
 
 type LoginForm = { username: string; password: string };
 
@@ -48,14 +51,23 @@ async function getUserId(request: Request) {
 }
 
 export async function requireUserId(
-  request: Request,
-  redirectTo: string = new URL(request.url).pathname
+  ctx: Context,
+  redirectTo: string = new URL(ctx.request.url).pathname
 ) {
-  const session = await getUserSession(request);
+  const session = await getUserSession(ctx.request);
   const userId = session.get("userId");
   if (!userId || typeof userId !== "string") {
     const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-    throw redirect(`/login?${searchParams}`);
+    ctx.redirect(`/login?${searchParams}`);
+    throw new GraphQLError(
+      "You have to be logged in for that",
+      undefined, // nodes
+      undefined, // source
+      undefined, // positions
+      undefined, // path
+      undefined, // originalError
+      { code: ErrorCode.UNAUTHORIZED, status: 401 }
+    );
   }
   return userId;
 }
@@ -64,25 +76,17 @@ export async function getUser(request: Request) {
   const userId = await getUserId(request);
   if (typeof userId !== "string") return null;
 
-  try {
-    const user = await db.user.findUnique({ where: { id: userId } });
-    return user;
-  } catch {
-    throw logout(request);
-  }
+  const user = await db.user.findUnique({ where: { id: userId } });
+  return user;
 }
 
 export async function logout(request: Request) {
   const session = await getUserSession(request);
-  return redirect("/login", {
-    headers: { "Set-Cookie": await storage.destroySession(session) },
-  });
+  return storage.destroySession(session);
 }
 
-export async function createUserSession(userId: string, redirectTo: string) {
+export async function createUserSession(userId: string) {
   const session = await storage.getSession();
   session.set("userId", userId);
-  return redirect(redirectTo, {
-    headers: { "Set-Cookie": await storage.commitSession(session) },
-  });
+  return storage.commitSession(session);
 }

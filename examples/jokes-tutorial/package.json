@@ -4,12 +4,18 @@
   "description": "",
   "license": "",
   "scripts": {
-    "build": "remix build",
+    "build": "yarn typecheck && remix build",
+    "codegen": "yarn introspection && graphql-codegen --config codegen.yml",
     "dev": "remix dev",
+    "introspection": "node --require esbuild-register app/graphql/introspection.ts",
     "postinstall": "remix setup node && rm -rf node_modules/remix-graphql/node_modules",
-    "start": "remix-serve build"
+    "start": "remix-serve build",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@graphql-codegen/cli": "^2.3.1",
+    "@graphql-codegen/typescript": "^2.4.2",
+    "@graphql-codegen/typescript-operations": "^2.2.2",
     "@prisma/client": "^3.7.0",
     "@remix-run/react": "^1.1.1",
     "@remix-run/serve": "^1.1.1",

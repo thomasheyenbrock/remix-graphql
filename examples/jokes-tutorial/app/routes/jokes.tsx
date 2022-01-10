@@ -1,34 +1,32 @@
-import type { Joke, User } from "@prisma/client";
 import type { LinksFunction, LoaderFunction } from "remix";
 import { Form, Link, useLoaderData } from "remix";
 import { Outlet } from "remix";
-import { db } from "~/utils/db.server";
-import { getUser } from "~/utils/session.server";
+import { processRequestWithGraphQL } from "remix-graphql/index.server";
+import { schema } from "~/graphql/schema";
+import type { JokesQuery } from "~/graphql/types";
 import stylesUrl from "../styles/jokes.css";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesUrl }];
 };
 
-type LoaderData = {
-  user: User | null;
-  jokeListItems: Pick<Joke, "id" | "name">[];
-};
+const JOKES_QUERY = /* GraphQL */ `
+  query Jokes {
+    me {
+      username
+    }
+    jokes(orderBy: createdAt, orderDirection: desc, take: 5) {
+      id
+      name
+    }
+  }
+`;
 
-export const loader: LoaderFunction = async ({ request }) => {
-  const data: LoaderData = {
-    user: await getUser(request),
-    jokeListItems: await db.joke.findMany({
-      orderBy: { createdAt: "desc" },
-      select: { id: true, name: true },
-      take: 5,
-    }),
-  };
-  return data;
-};
+export const loader: LoaderFunction = (args) =>
+  processRequestWithGraphQL({ args, schema, query: JOKES_QUERY });
 
 export default function JokesRoute() {
-  const data = useLoaderData<LoaderData>();
+  const loaderData = useLoaderData<{ data?: JokesQuery }>();
   return (
     <div className="jokes-layout">
       <header className="jokes-header">
@@ -39,9 +37,9 @@ export default function JokesRoute() {
               <span className="logo-medium">J🤪KES</span>
             </Link>
           </h1>
-          {data.user ? (
+          {loaderData.data?.me ? (
             <div className="user-info">
-              <span>{`Hi ${data.user.username}`}</span>
+              <span>{`Hi ${loaderData.data.me.username}`}</span>
               <Form action="/logout" method="post">
                 <button type="submit" className="button">
                   Logout
@@ -59,7 +57,7 @@ export default function JokesRoute() {
             <Link to=".">Get a random joke</Link>
             <p>Here are a few more jokes to check out:</p>
             <ul>
-              {data.jokeListItems.map((joke) => (
+              {loaderData.data?.jokes.map((joke) => (
                 <li key={joke.id}>
                   <Link to={joke.id} prefetch="intent">
                     {joke.name}

@@ -1,83 +1,107 @@
-import type { Joke } from "@prisma/client";
+import { GraphQLError } from "graphql";
 import type { ActionFunction, LoaderFunction, MetaFunction } from "remix";
-import { Form, Link, redirect, useCatch, useParams } from "remix";
-import { useLoaderData } from "remix";
+import { useActionData, useLoaderData, useParams } from "remix";
+import { processRequestWithGraphQL } from "remix-graphql/index.server";
 import { JokeDisplay } from "~/components/joke";
-import { db } from "~/utils/db.server";
-import { getUser, requireUserId } from "~/utils/session.server";
+import { schema } from "~/graphql/schema";
+import type { DeleteJokeMutation, JokeQuery } from "~/graphql/types";
+import { ErrorCode } from "~/utils/error-codes";
 
 export const meta: MetaFunction = ({
   data,
 }: {
-  data: LoaderData | undefined;
+  data: { data?: JokeQuery } | undefined;
 }) => {
-  if (!data) {
+  if (!data?.data?.joke?.name) {
     return { title: "No joke", description: "No joke found" };
   }
   return {
-    title: `"${data.joke.name}" joke`,
-    description: `Enjoy the "${data.joke.name}" joke and much more`,
+    title: `"${data.data.joke.name}" joke`,
+    description: `Enjoy the "${data.data.joke.name}" joke and much more`,
   };
 };
 
-type LoaderData = { joke: Joke; isOwner: boolean };
+const JOKE_QUERY = /* GraphQL */ `
+  query Joke($jokeId: ID!) {
+    me {
+      id
+    }
+    joke(id: $jokeId) {
+      name
+      content
+      jokster {
+        id
+      }
+    }
+  }
+`;
 
-export const loader: LoaderFunction = async ({ request, params }) => {
-  const user = await getUser(request);
-  const joke = await db.joke.findUnique({ where: { id: params.jokeId } });
-  if (!joke) throw new Response("What a joke! Not found.", { status: 404 });
-  const data: LoaderData = {
-    joke,
-    isOwner: user?.id ? joke.joksterId === user.id : false,
-  };
-  return data;
-};
+export const loader: LoaderFunction = async (args) =>
+  processRequestWithGraphQL({ args, schema, query: JOKE_QUERY });
 
-export const action: ActionFunction = async ({ request, params }) => {
-  const form = await request.formData();
-  if (form.get("_method") !== "delete") {
-    throw new Response("Method not supported", { status: 405 });
+const DELETE_JOKE_MUTATION = /* GraphQL */ `
+  mutation DeleteJoke($_method: Method!, $jokeId: ID!) {
+    editJoke(method: $_method, id: $jokeId) {
+      id
+    }
   }
-  const userId = await requireUserId(request);
-  const joke = await db.joke.findUnique({ where: { id: params.jokeId } });
-  if (!joke) {
-    throw new Response("Can't delete what does not exist", { status: 404 });
-  }
-  if (joke.joksterId !== userId) {
-    throw new Response("Pssh, nice try. That's not your joke", { status: 401 });
-  }
-  await db.joke.delete({ where: { id: params.jokeId } });
-  return redirect("/jokes");
-};
+`;
+
+export const action: ActionFunction = async (args) =>
+  processRequestWithGraphQL({ args, schema, query: DELETE_JOKE_MUTATION });
 
 export default function JokeRoute() {
-  const data = useLoaderData<LoaderData>();
-
-  return <JokeDisplay joke={data.joke} isOwner={data.isOwner} />;
-}
-
-export function CatchBoundary() {
-  const caught = useCatch();
+  const loaderData = useLoaderData<{ data?: JokeQuery }>();
+  const actionData =
+    useActionData<{ data?: DeleteJokeMutation; errors?: GraphQLError[] }>();
   const params = useParams();
-  switch (caught.status) {
-    case 404: {
-      return (
-        <div className="error-container">
-          Huh? What the heck is "{params.jokeId}"?
-        </div>
-      );
-    }
-    case 401: {
-      return (
-        <div className="error-container">
-          Sorry, but {params.jokeId} is not your joke.
-        </div>
-      );
-    }
-    default: {
-      throw new Error(`Unhandled error: ${caught.status}`);
-    }
+
+  const isUnauthorized = actionData?.errors?.some(
+    (error) => error.extensions.code === ErrorCode.UNAUTHORIZED
+  );
+  if (isUnauthorized) {
+    return (
+      <div className="error-container">
+        Sorry, but {params.jokeId} is not your joke.
+      </div>
+    );
   }
+
+  const isNotFound = actionData?.errors?.some(
+    (error) => error.extensions.code === ErrorCode.NOT_FOUND
+  );
+  if (isNotFound) {
+    return (
+      <div className="error-container">
+        Huh? What the heck is "{params.jokeId}"?
+      </div>
+    );
+  }
+
+  const isUnknownError = actionData && !actionData.data?.editJoke;
+  if (isUnknownError) {
+    throw new Error(
+      `Unhandled error, mutation returned no data: ${JSON.stringify(
+        actionData
+      )}`
+    );
+  }
+
+  const joke = loaderData.data?.joke;
+  if (!joke) {
+    return (
+      <div className="error-container">
+        Huh? What the heck is "{params.jokeId}"?
+      </div>
+    );
+  }
+
+  return (
+    <JokeDisplay
+      joke={joke}
+      isOwner={joke.jokster.id === loaderData.data?.me?.id}
+    />
+  );
 }
 
 export function ErrorBoundary() {

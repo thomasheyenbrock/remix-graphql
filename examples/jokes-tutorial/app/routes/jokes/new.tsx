@@ -1,16 +1,10 @@
+import { GraphQLError } from "graphql";
 import type { ActionFunction, LoaderFunction } from "remix";
-import {
-  Form,
-  json,
-  Link,
-  redirect,
-  useActionData,
-  useCatch,
-  useTransition,
-} from "remix";
+import { Form, Link, useActionData, useLoaderData, useTransition } from "remix";
+import { processRequestWithGraphQL } from "remix-graphql/index.server";
 import { JokeDisplay } from "~/components/joke";
-import { db } from "~/utils/db.server";
-import { getUser, requireUserId } from "~/utils/session.server";
+import { schema } from "~/graphql/schema";
+import { CreateJokeMutation, CreateJokeUserQuery } from "~/graphql/types";
 
 function validateJokeContent(content: string) {
   if (content.length < 10) {
@@ -24,46 +18,49 @@ function validateJokeName(name: string) {
   }
 }
 
-type ActionData = {
-  formError?: string;
-  fieldErrors?: { name: string | undefined; content: string | undefined };
-  fields?: { name: string; content: string };
-};
-
-const badRequest = (data: ActionData) => json(data, { status: 400 });
-
-export const action: ActionFunction = async ({ request }) => {
-  const userId = await requireUserId(request);
-  const form = await request.formData();
-  const name = form.get("name");
-  const content = form.get("content");
-  if (typeof name !== "string" || typeof content !== "string") {
-    return badRequest({ formError: "Form not submitted correctly" });
+const CREATE_JOKE_MUTATION = /* GraphQL */ `
+  mutation CreateJoke($name: String!, $content: String!) {
+    createJoke(name: $name, content: $content) {
+      fields {
+        name
+        content
+      }
+      fieldErrors {
+        name
+        content
+      }
+      joke {
+        id
+      }
+    }
   }
+`;
 
-  const fieldErrors = {
-    name: validateJokeName(name),
-    content: validateJokeContent(content),
-  };
-  const fields = { name, content };
-  if (Object.values(fieldErrors).some(Boolean)) {
-    return badRequest({ fieldErrors, fields });
+export const action: ActionFunction = (args) =>
+  processRequestWithGraphQL({ args, schema, query: CREATE_JOKE_MUTATION });
+
+const CREATE_JOKE_QUERY = /* GraphQL */ `
+  query CreateJokeUser {
+    me {
+      username
+    }
   }
+`;
 
-  const joke = await db.joke.create({ data: { ...fields, joksterId: userId } });
-  return redirect(`/jokes/${joke.id}`);
-};
-
-export const loader: LoaderFunction = async ({ request }) => {
-  const user = await getUser(request);
-  if (!user) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
-  return {};
-};
+export const loader: LoaderFunction = (args) =>
+  processRequestWithGraphQL({ args, schema, query: CREATE_JOKE_QUERY });
+// {
+//   const user = await getUser(request);
+//   if (!user) {
+//     throw new Response("Unauthorized", { status: 401 });
+//   }
+//   return {};
+// }
 
 export default function NewJokeRoute() {
-  const actionData = useActionData<ActionData>();
+  const laoderData = useLoaderData<{ data?: CreateJokeUserQuery }>();
+  const actionData =
+    useActionData<{ data?: CreateJokeMutation; errors?: GraphQLError[] }>();
   const transition = useTransition();
 
   if (transition.submission) {
@@ -79,6 +76,23 @@ export default function NewJokeRoute() {
     }
   }
 
+  const isUnauthorized =
+    !laoderData.data?.me ||
+    actionData?.errors?.some(
+      (error) => error.extensions.code === "UNAUTHORIZED"
+    );
+  if (isUnauthorized) {
+    return (
+      <div className="error-container">
+        <p>You must be logged in to create a joke.</p>
+        <Link to="/login">Login</Link>
+      </div>
+    );
+  }
+
+  const fields = actionData?.data?.createJoke?.fields;
+  const fieldErrors = actionData?.data?.createJoke?.fieldErrors;
+
   return (
     <div>
       <p>Add your own hilarious joke</p>
@@ -88,17 +102,15 @@ export default function NewJokeRoute() {
             Name:{" "}
             <input
               type="text"
-              defaultValue={actionData?.fields?.name}
+              defaultValue={fields?.name}
               name="name"
-              aria-invalid={Boolean(actionData?.fieldErrors?.name) || undefined}
-              aria-describedby={
-                actionData?.fieldErrors?.name ? "name-error" : undefined
-              }
+              aria-invalid={Boolean(fieldErrors?.name) || undefined}
+              aria-describedby={fieldErrors?.name ? "name-error" : undefined}
             />
           </label>
-          {actionData?.fieldErrors?.name ? (
+          {fieldErrors?.name ? (
             <p className="form-validation-error" role="alert" id="name-error">
-              {actionData.fieldErrors.name}
+              {fieldErrors.name}
             </p>
           ) : null}
         </div>
@@ -107,22 +119,20 @@ export default function NewJokeRoute() {
             Content:{" "}
             <textarea
               name="content"
-              defaultValue={actionData?.fields?.content}
-              aria-invalid={
-                Boolean(actionData?.fieldErrors?.content) || undefined
-              }
+              defaultValue={fields?.content}
+              aria-invalid={Boolean(fieldErrors?.content) || undefined}
               aria-describedby={
-                actionData?.fieldErrors?.content ? "content-error" : undefined
+                fieldErrors?.content ? "content-error" : undefined
               }
             />
           </label>
-          {actionData?.fieldErrors?.content ? (
+          {fieldErrors?.content ? (
             <p
               className="form-validation-error"
               role="alert"
               id="content-error"
             >
-              {actionData.fieldErrors.content}
+              {fieldErrors.content}
             </p>
           ) : null}
         </div>
@@ -134,19 +144,6 @@ export default function NewJokeRoute() {
       </Form>
     </div>
   );
-}
-
-export function CatchBoundary() {
-  const caught = useCatch();
-
-  if (caught.status === 401) {
-    return (
-      <div className="error-container">
-        <p>You must be logged in to create a joke.</p>
-        <Link to="/login">Login</Link>
-      </div>
-    );
-  }
 }
 
 export function ErrorBoundary() {

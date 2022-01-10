@@ -1,0 +1,10 @@
+overwrite: true
+schema: "app/graphql/introspection.json"
+documents: "app/routes/**/*.{ts,tsx}"
+generates:
+  app/graphql/types.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+    config:
+      skipTypename: true

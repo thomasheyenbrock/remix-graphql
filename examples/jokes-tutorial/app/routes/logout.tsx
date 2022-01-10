@@ -1,9 +1,15 @@
 import { ActionFunction, LoaderFunction, redirect } from "remix";
-import { logout } from "~/utils/session.server";
+import { processRequestWithGraphQL } from "remix-graphql/index.server";
+import { schema } from "~/graphql/schema";
 
-export const action: ActionFunction = ({ request }) => {
-  return logout(request);
-};
+const LOGOUT_MUTATION = /* GraphQL */ `
+  mutation Logout {
+    logout
+  }
+`;
+
+export const action: ActionFunction = (args) =>
+  processRequestWithGraphQL({ args, query: LOGOUT_MUTATION, schema });
 
 export const loader: LoaderFunction = () => {
   return redirect("/login");
