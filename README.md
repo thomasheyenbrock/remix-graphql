@@ -99,6 +99,9 @@ export const loader: LoaderFunction = (args) =>
     // - ...the route params.
     // - ...the submitted `formData` (if it exists).
     variables: { limit: 10 },
+    // Optionally pass an object with properties that should be included in the
+    // execution context.
+    context: {},
     // Optionally pass a function to derive a custom HTTP status code for a
     // successfully executed operation.
     deriveStatusCode(
@@ -189,6 +192,9 @@ import { schema } from "~/graphql/schema";
 export const loader = createLoaderFunction({
   // Provide your schema.
   schema,
+  // Optionally pass an object with properties that should be included in the
+  // execution context.
+  context: {},
   // Optionally pass a function to derive a custom HTTP status code for a
   // successfully executed operation.
   deriveStatusCode,
@@ -198,6 +204,9 @@ export const loader = createLoaderFunction({
 export const action = createActionFunction({
   // Provide your schema.
   schema,
+  // Optionally pass an object with properties that should be included in the
+  // execution context.
+  context: {},
   // Optionally pass a function to derive a custom HTTP status code for a
   // successfully executed operation.
   deriveStatusCode,
@@ -216,20 +225,29 @@ const deriveStatusCode: DeriveStatusCodeFunction = (
 ## Context
 
 When defining a schema and writing resolvers, it's common to provide a context-
-object. `remix-graphql` exports a `Context` type that contains all properties
-that are added to this context objects for execution:
+object. All functions exported by `remix-graphql` accept an optional property
+`context` in the arguments object. When passed, it must be an object. All of
+its properties will be included in the context object passed to your resolvers.
+
+`remix-graphql` also exports a `Context` type that contains all properties
+that are added to this context objects for execution. This type accepts an
+optional generic by which you can add any custom properties to your context
+object.
 
 ```ts
+import type { PrismaClient } from "@prisma/client";
 import type { Context } from "remix-graphql/index.server";
+
+type ContextWithDatabase = Context<{ db: PrismaClient }>;
 ```
 
 The following subsections highlight all properties that are added to the
-context by `remix-graphql`.
+context object by `remix-graphql`.
 
 ### `request`
 
 This is the `Request` object that is passed to a loader- or action-function in
-Remix. It will always be part of the context.
+Remix. It will always be part of the context object.
 
 ### `redirect`
 
@@ -250,7 +268,7 @@ function redirect(
 ): void;
 ```
 
-Note that this function is only part of the context when handling GraphQL
-requests in UI routes, i.e. when using `processRequestWithGraphQL`. It is
-_NOT_ part of the context when handling GraphQL requests in a resource route,
-i.e. when using `createActionFunction` or `createLoaderFunction`.
+Note that this function is only part of the context object when handling
+GraphQL requests in UI routes, i.e. when using `processRequestWithGraphQL`.
+It is _NOT_ part of the context object when handling GraphQL requests in a
+resource route, i.e. when using `createActionFunction` or `createLoaderFunction`.

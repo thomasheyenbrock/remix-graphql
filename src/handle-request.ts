@@ -7,18 +7,20 @@ import {
   shouldRenderGraphiQL,
 } from "graphql-helix";
 import { json } from "remix";
-import { Context } from "./context";
+import { Context, CustomContext } from "./context";
 import { deriveStatusCode as defaultDeriveStatusCode } from "./derive-status-code";
 
 export async function handleRequest({
   remixRequest,
   request,
   schema,
+  context = {},
   deriveStatusCode = defaultDeriveStatusCode,
 }: {
   remixRequest: Request;
   request: HelixRequest;
   schema: GraphQLSchema;
+  context?: CustomContext;
   deriveStatusCode?: typeof defaultDeriveStatusCode;
 }) {
   // Determine whether we should render GraphiQL instead of returning an API response
@@ -39,7 +41,7 @@ export async function handleRequest({
     request,
     schema,
     contextFactory() {
-      return { request: remixRequest };
+      return { ...context, request: remixRequest };
     },
   });
 

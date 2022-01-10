@@ -1,6 +1,7 @@
 import { GraphQLError, GraphQLSchema } from "graphql";
 import { ActionFunction, json } from "remix";
 import { Readable } from "stream";
+import { CustomContext } from "./context";
 import { deriveStatusCode as defaultDeriveStatusCode } from "./derive-status-code";
 import { handleRequest } from "./handle-request";
 
@@ -45,9 +46,11 @@ async function parseBody(
 
 export function getActionFunction({
   schema,
+  context,
   deriveStatusCode,
 }: {
   schema: GraphQLSchema;
+  context?: CustomContext;
   deriveStatusCode?: typeof defaultDeriveStatusCode;
 }): ActionFunction {
   return async ({ request }) => {
@@ -68,6 +71,7 @@ export function getActionFunction({
             query: new URL(request.url).searchParams,
           },
           schema,
+          context,
           deriveStatusCode,
         });
     }

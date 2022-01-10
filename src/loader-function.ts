@@ -1,5 +1,6 @@
 import { GraphQLSchema } from "graphql";
 import { LoaderFunction } from "remix";
+import { CustomContext } from "./context";
 import { deriveStatusCode as defaultDeriveStatusCode } from "./derive-status-code";
 import { handleRequest } from "./handle-request";
 
@@ -16,9 +17,11 @@ type Dict<Value> = {
 
 export function getLoaderFunction({
   schema,
+  context,
   deriveStatusCode,
 }: {
   schema: GraphQLSchema;
+  context: CustomContext;
   deriveStatusCode?: typeof defaultDeriveStatusCode;
 }): LoaderFunction {
   return ({ request }) => {
@@ -44,6 +47,7 @@ export function getLoaderFunction({
         query,
       },
       schema,
+      context,
       deriveStatusCode,
     });
   };

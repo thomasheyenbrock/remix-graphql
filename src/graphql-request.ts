@@ -6,7 +6,7 @@ import {
   Request as HelixRequest,
 } from "graphql-helix";
 import { json } from "remix";
-import { Context } from "./context";
+import { Context, CustomContext } from "./context";
 import { deriveStatusCode as defaultDeriveStatusCode } from "./derive-status-code";
 
 type Variables = Record<string, unknown>;
@@ -33,12 +33,14 @@ export async function processRequestWithGraphQL({
   schema,
   query: _query,
   variables: _variables,
+  context = {},
   deriveStatusCode = defaultDeriveStatusCode,
 }: {
   args: DataFunctionArgs;
   schema: GraphQLSchema;
   query: string;
   variables?: Variables;
+  context?: CustomContext;
   deriveStatusCode?: typeof defaultDeriveStatusCode;
 }): Promise<Response> {
   const helixRequest: HelixRequest = {
@@ -67,6 +69,7 @@ export async function processRequestWithGraphQL({
     schema,
     contextFactory() {
       return {
+        ...context,
         request: args.request,
         redirect(url, headersInit) {
           if (typeof redirect === "string" && url !== redirect) {
