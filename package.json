@@ -1,6 +1,6 @@
 {
   "name": "remix-graphql",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Utilities for using GraphQL with a Remix app",
   "keywords": [
     "remix",
@@ -24,7 +24,8 @@
     "build:code": "esbuild src/index.server.ts --bundle --platform=node --external:graphql --external:graphql-helix --external:remix --outfile=index.server.js",
     "build:types": "tsc",
     "format": "prettier --write .",
-    "prepare": "install-peers && remix setup node"
+    "prepare": "install-peers && remix setup node",
+    "prepublish": "yarn build"
   },
   "dependencies": {
     "graphql-helix": "^1.11.0"
