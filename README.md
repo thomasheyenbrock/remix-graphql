@@ -16,6 +16,18 @@ And here are some cool ideas what it might do as well in the future:
   against a remote GraphQL API
 - Batching queries from multiple loaders into a single API request
 
+## Contents
+
+- [Installing](#installing)
+- [Defining your schema](#defining-your-schema)
+- [Installing](#installing)
+- [Handle loader and action requests with GraphQL](#handle-loader-and-action-requests-with-graphql)
+  - [Automated type generation](#automated-type-generation)
+- [Set up a GraphQL API in a Remix app](#set-up-a-graphql-api-in-a-remix-app)
+- [Context](#context)
+  - [`request`](#request)
+  - [`redirect`](#redirect)
+
 ## Installing
 
 You can install `remix-graphql` with your preferred package manager. It depends
