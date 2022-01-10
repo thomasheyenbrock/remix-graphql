@@ -36,6 +36,7 @@ export function getLoaderFunction({
       }
     }
     return handleRequest({
+      remixRequest: request,
       request: {
         body: null,
         headers: request.headers,

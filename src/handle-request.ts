@@ -7,13 +7,16 @@ import {
   shouldRenderGraphiQL,
 } from "graphql-helix";
 import { json } from "remix";
+import { Context } from "./context";
 import { deriveStatusCode as defaultDeriveStatusCode } from "./derive-status-code";
 
 export async function handleRequest({
+  remixRequest,
   request,
   schema,
   deriveStatusCode = defaultDeriveStatusCode,
 }: {
+  remixRequest: Request;
   request: HelixRequest;
   schema: GraphQLSchema;
   deriveStatusCode?: typeof defaultDeriveStatusCode;
@@ -29,12 +32,15 @@ export async function handleRequest({
   const { operationName, query, variables } = getGraphQLParameters(request);
 
   // Validate and execute the query
-  const result = await processRequest({
+  const result = await processRequest<Context>({
     operationName,
     query,
     variables,
     request,
     schema,
+    contextFactory() {
+      return { request: remixRequest };
+    },
   });
 
   if (result.type !== "RESPONSE") {

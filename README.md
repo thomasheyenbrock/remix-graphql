@@ -7,26 +7,19 @@ with that.
 To be more speciic, here's what the latest version of `remix-graphql` can help
 you with:
 
+- Handling loader and action requests using GraphQL queries and mutations
 - Setting up a GraphQL API as a [resource route](https://remix.run/docs/en/v1/guides/resource-routes)
 
 And here are some cool ideas what it might do as well in the future:
 
-- Creating loaders and actions based on GraphQL queries and mutations
-- Executing these operations against a resource route in the same project or
+- Executing operations against a resource route in the same project or
   against a remote GraphQL API
 - Batching queries from multiple loaders into a single API request
 
-## Set up a GraphQL API in a Remix app
+## Installing
 
-First, create your GraphQL schema with your method of choice: Vanilla
-`graphql-js`, `nexus`, `gqtx`, everything works as long as it gives you
-a `GraphQLSchema` object. Create some module that exports this schema,
-for example under `~/graphql/schema.ts`.
-
-Second, install `remix-graphql` and the `graphql` package with your preferred
-package manager. It lists some of the Remix-packages as peer dependencies, but
-you should already have them installed after setting up a Remix project with
-the CLI.
+You can install `remix-graphql` with your preferred package manager. It depends
+on the `graphql` package, so make sure to also have that installed.
 
 ```sh
 # Using `npm`
@@ -35,88 +28,229 @@ npm install graphql remix-graphql
 yarn add graphql remix-graphql
 ```
 
-Third (and already last), create a file for your resource route, e.g.
-`~/routes/graphql.ts` and with the following few lines of code you got
-yourself a working GraphQL API that supports GET and POST requests! 🥳
+It also lists some of the Remix-packages as peer dependencies. (If you used the
+Remix CLI to setup your project, you most likely have them installed already.)
+If you get unexpected errors, double check that the following are installed:
+
+- `@remix-run/dev`
+- `@remix-run/react`
+- `@remix-run/serve`
+- `remix`
+
+## Defining your schema
+
+`remix-graphql` keeps it simple and let's you decide on the best way to define
+your GraphQL schema. In all places where you need to "pass your schema to
+`remix-graphql`", the respective function expects a `GraphQLSchema` object.
+
+That means all of the following approached work to define a schema:
+
+- Using the `GraphQLSchema` class from the `graphql` package (obviously...)
+- Defining the schema using the SDL, defining resolver functions in an object
+  and merging both with `makeExecutableSchema` (from `@graphql-tools/schema`)
+- Using `nexus` and `makeSchema`
+
+We recommend exporting the schema from a file, e.g. `app/graphql/schema.server.ts`.
+By using the `.server.ts` extension you make sure that none of this code will
+end up being shipped to the browser. (This is a hint to the Remix compiler that
+it should ignore this module when building the browser bundle.)
+
+## Handle loader and action requests with GraphQL
+
+Both `loaders` and `actions` are just simple functions that return a `Response`
+given a `Request`. With `remix-graphql` you can use GraphQL to process this
+request! Here's a complete and working example of how it works:
+
+```tsx
+// app/routes/index.tsx
+import { Form } from "remix";
+import type { ActionFunction, LoaderFunction } from "remix";
+import { processRequestWithGraphQL } from "remix-graphql/index.server";
+
+// Import your schema from whereever you export it
+import { schema } from "~/graphql/schema";
+
+const ALL_POSTS_QUERY = /* GraphQL */ `
+  query Posts($limit: Int) {
+    posts(limit: $limit) {
+      id
+      title
+      likes
+      author {
+        name
+      }
+    }
+  }
+`;
+
+export const loader: LoaderFunction = (args) =>
+  processRequestWithGraphQL({
+    // Pass on the arguments that Remix passes to a loader function.
+    args,
+    // Provide your schema.
+    schema,
+    // Provide a GraphQL operation that should be executed. This can also be a
+    // mutation, it is named `query` to align with the common naming when
+    // sending GraphQL requests over HTTP.
+    query: ALL_POSTS_QUERY,
+    // Optionally provide variables that should be used for executing the
+    // operation. If this is not passed, `remix-graphql` will derive variables
+    // from...
+    // - ...the route params.
+    // - ...the submitted `formData` (if it exists).
+    variables: { limit: 10 },
+    // Optionally pass a function to derive a custom HTTP status code for a
+    // successfully executed operation.
+    deriveStatusCode(
+      // The result of the execution.
+      executionResult: ExecutionResult,
+      // The status code that would be returned by default, i.e. of the
+      // `deriveStatusCode` function is not passed.
+      defaultStatusCode: number
+    ) {
+      return defaultStatusCode;
+    },
+  });
+
+const LIKE_POST_MUTATION = `
+  mutation LikePost($id: ID!) {
+    likePost(id: $id) {
+      id
+      likes
+    }
+  }
+`;
+
+// The `processRequestWithGraphQL` function can be used for both loaders and
+// actions!
+export const action: ActionFunction = (args) =>
+  processRequestWithGraphQL({ args, schema, query: LIKE_POST_MUTATION });
+
+export default function IndexRoute() {
+  const { data } = useLoaderData();
+  if (!data) {
+    return "Ooops, something went wrong :(";
+  }
+
+  return (
+    <main>
+      <h1>Blog Posts</h1>
+      <ul>
+        {data.posts.map((post) => (
+          <li key={post.id}>
+            {post.title} (by {post.author.name})
+            <br />
+            {post.likes} Likes
+            <Form method="post">
+              {/* `remix-graphql` will automatically transform all posted 
+                  form data into variables of the same name for the GraphQL
+                  operation */}
+              <input hidden name="id" value={post.id} />
+              <button type="submit">Like</button>
+            </Form>
+          </li>
+        ))}
+      </ul>
+    </main>
+  );
+}
+
+type LoaderData = {
+  data?: {
+    posts: {
+      id: string;
+      title: string;
+      likes: number;
+      author: { name: string };
+    }[];
+  };
+};
+```
+
+## Set up a GraphQL API in a Remix app
+
+You can create a dedicated endpoint for your GraphQL API using resource routes
+in Remix. All you need to do is create a route (e.g. `app/routes/graphql.ts`)
+and paste the following code. By using both a loader and an action your endpoint
+supports both GET and POST requests!
 
 ```ts
+// app/routes/graphql.ts
 import {
   createActionFunction,
   createLoaderFunction,
 } from "remix-graphql/index.server";
+import type { DeriveStatusCodeFunction } from "remix-graphql/index.server";
 
-// Import your schema from whereever you put it
+// Import your schema from whereever you export it
 import { schema } from "~/graphql/schema";
 
 // Handles GET requests
-export const loader = createLoaderFunction({ schema });
+export const loader = createLoaderFunction({
+  // Provide your schema.
+  schema,
+  // Optionally pass a function to derive a custom HTTP status code for a
+  // successfully executed operation.
+  deriveStatusCode,
+});
 
 // Handles POST requests
-export const action = createActionFunction({ schema });
+export const action = createActionFunction({
+  // Provide your schema.
+  schema,
+  // Optionally pass a function to derive a custom HTTP status code for a
+  // successfully executed operation.
+  deriveStatusCode,
+});
+
+// This function equals the default behaviour.
+const deriveStatusCode: DeriveStatusCodeFunction = (
+  // The result of the execution.
+  executionResult,
+  // The status code that would be returned by default, i.e. of the
+  // `deriveStatusCode` function is not passed.
+  defaultStatusCode
+) => defaultStatusCode;
 ```
 
-## API
+## Context
 
-The package exports the following functions and types.
-
-### `createActionFunction`
-
-This higher-order-function returns a loader function that can handle
-GraphQL requests via POST.
-
-```tsx
-// app/routes/graphql.ts
-import { createActionFunction } from "remix-graphql/index.server";
-import schema from "~/graphql/schema.ts";
-
-export const action = createActionFunction({ schema });
-```
-
-The function accepts a single argument of the following type:
+When defining a schema and writing resolvers, it's common to provide a context-
+object. `remix-graphql` exports a `Context` type that contains all properties
+that are added to this context objects for execution:
 
 ```ts
-type Options = {
-  // The schema to use for execution (required)
-  schema: GraphQLSchema;
-  // Compute a custom status code for a successfully executed operation (optional)
-  deriveStatusCode: DeriveStatusCodeFunction;
-};
+import type { Context } from "remix-graphql/index.server";
 ```
 
-### `createLoaderFunction`
+The following subsections highlight all properties that are added to the
+context by `remix-graphql`.
 
-This higher-order-function returns a loader function that can handle
-GraphQL requests via GET.
+### `request`
 
-```tsx
-// app/routes/graphql.ts
-import { createLoaderFunction } from "remix-graphql/index.server";
-import schema from "~/graphql/schema.ts";
+This is the `Request` object that is passed to a loader- or action-function in
+Remix. It will always be part of the context.
 
-export const loader = createLoaderFunction({ schema });
-```
+### `redirect`
 
-The function accepts a single argument of the following type:
+When handling loaders or actions in UI routes, a common pattern in Remix is
+redirection. (Remix even provides a `redirect` utility function that can be
+returned from any loader- or action-function.) In `remix-graphql` you can
+achieve this by using the `redirect` function that is provided in the context
+object.
+
+This function has the following signature:
 
 ```ts
-type Options = {
-  // The schema to use for execution (required)
-  schema: GraphQLSchema;
-  // Compute a custom status code for a successfully executed operation (optional)
-  deriveStatusCode: DeriveStatusCodeFunction;
-};
+function redirect(
+  // The URL for redirection
+  url: string,
+  // Optionally header values to include in the HTTP response
+  headers?: HeadersInit
+): void;
 ```
 
-### `DeriveStatusCodeFunction`
-
-This TypeScript type can be used for explicit typing of the `deriveStatusCode`
-option that can be passed to `createActionFunction` and `createLoaderFunction`.
-
-```ts
-type DeriveStatusCodeFunction = (
-  // This type comes from the "graphql" package
-  executionResult: ExecutionResult,
-  // This is the status code that would be returned by default
-  defaultStatusCode: number
-) => number;
-```
+Note that this function is only part of the context when handling GraphQL
+requests in UI routes, i.e. when using `processRequestWithGraphQL`. It is
+_NOT_ part of the context when handling GraphQL requests in a resource route,
+i.e. when using `createActionFunction` or `createLoaderFunction`.

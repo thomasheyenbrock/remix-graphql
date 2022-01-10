@@ -60,6 +60,7 @@ export function getActionFunction({
         );
       case "success":
         return handleRequest({
+          remixRequest: request,
           request: {
             body: parseResult.json,
             headers: request.headers,
