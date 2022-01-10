@@ -115,7 +115,7 @@ export const loader: LoaderFunction = (args) =>
     },
   });
 
-const LIKE_POST_MUTATION = `
+const LIKE_POST_MUTATION = /* GraphQL */ `
   mutation LikePost($id: ID!) {
     likePost(id: $id) {
       id
@@ -168,6 +168,109 @@ type LoaderData = {
     }[];
   };
 };
+```
+
+### Automated type generation
+
+Hidden at the end of the example above you see that the data returned from the
+loader function had to be typed by hand. Since GraphQL is strongly typed, you
+can automate this if you want to!
+
+First, you need to generate the introspection data as JSON from your schema and
+store it in a local file. For that you can create a simple script like this:
+
+```ts
+// app/graphql/introspection.{js,ts}
+import fs from "fs";
+import { introspectionFromSchema } from "graphql";
+import path from "path";
+import { schema } from "./schema";
+
+fs.writeFileSync(
+  path.join(__dirname, "introspection.json"),
+  JSON.stringify(introspectionFromSchema(schema))
+);
+```
+
+Usually you don't want to commit the generated JSON file to version control, so
+we recommend to add it to your `.gitignore` file.
+
+To make running this script easier, create a simple NPM script for it in your
+`package.json`:
+
+```json
+{
+  "scripts": {
+    // If you created the script with JavaScript
+    "introspection": "node app/graphql/introspection.js",
+    // If you created the script with TypeScript (make sure to install
+    // `esbuild-register` as dev-dependency in this case)
+    "introspection": "node --require esbuild-register app/graphql/introspection.ts"
+  }
+}
+```
+
+To actually generate types from your queries and mutations we recommend using
+[GraphQL Code Generator](https://www.graphql-code-generator.com). For that you
+need to install a couple of dependencies:
+
+```sh
+# Using `npm`
+npm install --save-dev @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations
+# Or using `yarn`
+yarn add -D @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-operations
+```
+
+Almost there! Now create a config file named `codegen.yml` in the root of your
+project that contains the following:
+
+```yml
+overwrite: true
+# The path where the previously generated introspection data is stored
+schema: "app/graphql/introspection.json"
+# A glob that matches all files that contain operation definitions
+documents: "app/routes/**/*.{ts,tsx}"
+generates:
+  # This is the path where the generated types will be stored
+  app/graphql/types.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+    config:
+      skipTypename: true
+```
+
+Now you can finally generate the types! For convenience, add another NPM
+script:
+
+```json
+{
+  "scripts": {
+    "introspection": "node --require esbuild-register app/graphql/introspection.ts",
+    "codegen": "npm run introspection && graphql-codegen --config codegen.yml"
+  }
+}
+```
+
+Running `npm run codegen` (or `yarn codegen`) will now automatically create
+types for the returned data for all queries and mutations. (Side-note: It's
+also a great way to validate if all your operations are valid against your
+schema!)
+
+**One more thing:** Noticed the `/* GraphQL */` comment we included before the
+strings that contain queries and mutations in the example above? This is
+important! It's a hint to `@graphql-codegen` that this string should be
+parsed as GraphQL. Without it you won't get any types for the operation
+defined within the string.
+
+The example above could now be modified like this:
+
+```ts
+// Add this import...
+import type { PostsQuery } from "~/graphql/types";
+
+// ...and change the `LoaderData` type like this:
+type LoaderData = { data?: PostsQuery };
 ```
 
 ## Set up a GraphQL API in a Remix app
