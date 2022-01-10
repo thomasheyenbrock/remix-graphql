@@ -75,6 +75,7 @@ request! Here's a complete and working example of how it works:
 
 ```tsx
 // app/routes/index.tsx
+import type { GraphQLError } from "graphql";
 import { Form } from "remix";
 import type { ActionFunction, LoaderFunction } from "remix";
 import { processRequestWithGraphQL } from "remix-graphql/index.server";
@@ -179,6 +180,7 @@ type LoaderData = {
       author: { name: string };
     }[];
   };
+  errors?: GraphQLError[];
 };
 ```
 
@@ -282,7 +284,7 @@ The example above could now be modified like this:
 import type { PostsQuery } from "~/graphql/types";
 
 // ...and change the `LoaderData` type like this:
-type LoaderData = { data?: PostsQuery };
+type LoaderData = { data?: PostsQuery; errors?: GraphQLError[] };
 ```
 
 ## Set up a GraphQL API in a Remix app
