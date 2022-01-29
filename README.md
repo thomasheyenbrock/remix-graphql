@@ -142,7 +142,7 @@ export const action: ActionFunction = (args) =>
   processRequestWithGraphQL({ args, schema, query: LIKE_POST_MUTATION });
 
 export default function IndexRoute() {
-  const { data } = useLoaderData();
+  const { data } = useLoaderData<LoaderData>();
   if (!data) {
     return "Ooops, something went wrong :(";
   }
