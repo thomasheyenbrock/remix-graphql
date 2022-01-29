@@ -105,3 +105,31 @@ export async function processRequestWithGraphQL({
 
   return json(result.payload, { status, headers });
 }
+
+export async function sendGraphQLRequest({
+  args,
+  endpoint,
+  headers: headersInit,
+  query,
+  variables: _variables,
+}: {
+  args: DataFunctionArgs;
+  endpoint: string;
+  headers?: HeadersInit;
+  query: string;
+  variables?: Variables;
+}): Promise<Response> {
+  const headers = new Headers(headersInit);
+  if (!headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+
+  return fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      query,
+      variables: _variables || (await parseVariables(args)),
+    }),
+  });
+}

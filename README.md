@@ -8,12 +8,12 @@ To be more speciic, here's what the latest version of `remix-graphql` can help
 you with:
 
 - Handling loader and action requests using GraphQL queries and mutations
+  - You can define a local schema and resolvers to handle the request
+  - You can also run perform GraphQL requests again a remote API
 - Setting up a GraphQL API as a [resource route](https://remix.run/docs/en/v1/guides/resource-routes)
 
 And here are some cool ideas what it might do as well in the future:
 
-- Executing operations against a resource route in the same project or
-  against a remote GraphQL API
 - Batching queries from multiple loaders into a single API request
 
 ## Contents
@@ -22,6 +22,7 @@ And here are some cool ideas what it might do as well in the future:
 - [Defining your schema](#defining-your-schema)
 - [Handle loader and action requests with GraphQL](#handle-loader-and-action-requests-with-graphql)
   - [Automated type generation](#automated-type-generation)
+- [Send requests to a remote GraphQL API](#send-requests-to-a-remote-graphql-api)
 - [Set up a GraphQL API in a Remix app](#set-up-a-graphql-api-in-a-remix-app)
 - [Context](#context)
   - [`request`](#request)
@@ -284,6 +285,103 @@ import type { PostsQuery } from "~/graphql/types";
 
 // ...and change the `LoaderData` type like this:
 type LoaderData = { data?: PostsQuery; errors?: GraphQLError[] };
+```
+
+## Send requests to a remote GraphQL API
+
+Maybe you don't want to write your GraphQL API as part of your Remix app,
+or you want to use a third-party GraphQL API like GitHubs public API. In
+both cases `remix-graphql` helps you with that!
+
+```tsx
+// app/routes/$username.tsx
+import type { GraphQLError } from "graphql";
+import type { LoaderFunction } from "remix";
+import { sendGraphQLRequest } from "remix-graphql/index.server";
+
+const LOAD_USER_QUERY = /* GraphQL */ `
+  query LoadUser($username: String!) {
+    user(login: $username) {
+      name
+    }
+  }
+`;
+
+export const loader: LoaderFunction = (args) =>
+  sendGraphQLRequest({
+    // Pass on the arguments that Remix passes to a loader function.
+    args,
+    // Provide the endpoint of the remote GraphQL API.
+    endpoint: "https://api.github.com/graphql",
+    // Optionally add headers to the request.
+    headers: { authorization: `Bearer ${process.env.GITHUB_TOKEN}` },
+    // Provide the GraphQL operation to send to the remote API.
+    query: LOAD_USER_QUERY,
+    // Optionally provide variables that should be used for executing the
+    // operation. If this is not passed, `remix-graphql` will derive variables
+    // from...
+    // - ...the route params.
+    // - ...the submitted `formData` (if it exists).
+    // That means the following is the default and could also be ommited.
+    variables: args.params,
+  });
+
+export default function UserRoute() {
+  const { data } = useLoaderData<LoaderData>();
+  if (!data) {
+    return "Ooops, something went wrong :(";
+  }
+  if (!data.user) {
+    return "User not found :(";
+  }
+  return <h1>{data.user.name}</h1>;
+}
+
+type LoaderData = {
+  data?: {
+    user: {
+      name: string | null;
+    } | null;
+  };
+  errors?: GraphQLError[];
+};
+```
+
+If you want to do more stuff in your loader than just a single GraphQL query,
+you can totally do that! The function `sendGraphQLRequest` will return the
+`Response` object from the fetch-request to the remote API, so you can do with
+that whatever you need in your loader.
+
+```tsx
+import { json } from "remix";
+import type { LoaderFunction } from "remix";
+import { sendGraphQLRequest } from "remix-graphql/index.server";
+
+const LOAD_USER_QUERY = /* GraphQL */ `
+  query LoadUser($username: String!) {
+    user(login: $username) {
+      name
+    }
+  }
+`;
+
+export const loader: LoaderFunction = (args) => {
+  try {
+    const loadUserRes = await sendGraphQLRequest({
+      args,
+      endpoint: "https://api.github.com/graphql",
+      headers: { authorization: `Bearer ${process.env.GITHUB_TOKEN}` },
+      query: LOAD_USER_QUERY,
+    }).then((res) => res.json());
+
+    /* You can do any additional stuff here...  */
+    const otherStuff = 42;
+
+    return json({ username: loadUserRes.data.user.name, otherStuff });
+  } catch {
+    throw new Response("Something went wrong while loading the data :(");
+  }
+};
 ```
 
 ## Set up a GraphQL API in a Remix app
