@@ -24,8 +24,7 @@
     "build:code": "esbuild src/index.server.ts --bundle --platform=node --external:graphql --external:graphql-helix --external:remix --outfile=index.server.js",
     "build:types": "tsc",
     "format": "prettier --write .",
-    "prepare": "install-peers && remix setup node",
-    "prepublish": "yarn build"
+    "prepare": "install-peers && remix setup node"
   },
   "dependencies": {
     "graphql-helix": "^1.11.0"
