@@ -20,7 +20,6 @@ And here are some cool ideas what it might do as well in the future:
 
 - [Installing](#installing)
 - [Defining your schema](#defining-your-schema)
-- [Installing](#installing)
 - [Handle loader and action requests with GraphQL](#handle-loader-and-action-requests-with-graphql)
   - [Automated type generation](#automated-type-generation)
 - [Set up a GraphQL API in a Remix app](#set-up-a-graphql-api-in-a-remix-app)
