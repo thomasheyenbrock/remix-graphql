@@ -9,7 +9,7 @@
     "target": "ESNext",
     "strict": true,
     "baseUrl": "src",
-    "outDir": ".",
+    "outDir": "dist",
     "declaration": true,
     "emitDeclarationOnly": true
   }

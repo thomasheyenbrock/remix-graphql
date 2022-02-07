@@ -6,5 +6,4 @@ build
 public/build
 .env
 
-*.d.ts
-index.server.js
+dist
