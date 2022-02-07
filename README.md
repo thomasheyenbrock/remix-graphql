@@ -19,6 +19,7 @@ And here are some cool ideas what it might do as well in the future:
 ## Contents
 
 - [Installing](#installing)
+  - [How to import from `remix-graphql`](#how-to-import-from-remix-graphql)
 - [Defining your schema](#defining-your-schema)
 - [Handle loader and action requests with GraphQL](#handle-loader-and-action-requests-with-graphql)
   - [Automated type generation](#automated-type-generation)
@@ -48,6 +49,21 @@ If you get unexpected errors, double check that the following are installed:
 - `@remix-run/react`
 - `@remix-run/serve`
 - `remix`
+
+### How to import from `remix-graphql`
+
+This module not indended to be used in a browser environment, it only works
+on the server. You can force the Remix compiler to never ever include stuff
+from `remix-graphql` in the client bundle by importing from a file with a
+`.server.js` (or `.server.ts`) extension.
+
+```ts
+// This will not work and will actually throw an error:
+import { anything } from "remix-graphql";
+
+// Do this instead:
+import { anything } from "remix-graphql/index.server";
+```
 
 ## Defining your schema
 
