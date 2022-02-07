@@ -1,5 +1,5 @@
 {
-  "exclude": ["dist/**", "examples/**"],
+  "exclude": ["index.server.d.ts", "dist/**", "examples/**"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2019"],
     "isolatedModules": true,

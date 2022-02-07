@@ -22,9 +22,9 @@
   ],
   "scripts": {
     "build": "yarn build:clean && yarn build:code && yarn build:types",
-    "build:clean": "rm -rf dist",
+    "build:clean": "rm -rf dist && rm -f index.server.d.ts",
     "build:code": "esbuild src/index.ts --bundle --platform=node --external:graphql --external:graphql-helix --external:remix --outfile=dist/index.js",
-    "build:types": "tsc",
+    "build:types": "tsc && echo 'export * from \"./dist\";' > index.server.d.ts",
     "format": "prettier --write .",
     "prepare": "install-peers && remix setup node"
   },
