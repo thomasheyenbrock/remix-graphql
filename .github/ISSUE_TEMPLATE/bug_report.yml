@@ -55,7 +55,7 @@ body:
       label: Expected behavior
       description: Provide a clear and concise description of what you expected to happen.
       placeholder: |
-        As a user, I expected ___ behavior but i am seeing ___
+        As a user, I expected ___ behavior but I am seeing ___
     validations:
       required: true
   - type: textarea
