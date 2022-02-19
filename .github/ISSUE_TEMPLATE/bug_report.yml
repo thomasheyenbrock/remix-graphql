@@ -78,6 +78,36 @@ body:
         - Version: [e.g. 91.1]
     validations:
       required: true
+  - type: input
+    id: javascript_runtime_version
+    attributes:
+      label: Javascript Run time version
+      description: |
+        The version of node.js, deno, cloudflare etc... you are currently using.
+    validations:
+      required: true
+  - type: input
+    id: deploy_target
+    attributes:
+      label: Deploy Target
+      description: |
+        Which platform you deploying to? Examples: Vanilla Remix Server, Vercel, CF Worker, Deno, etc..
+    validations:
+      required: true
+  - type: input
+    id: operating_system
+    attributes:
+      label: Operating System
+      description: |
+        Which operating are you currently using?
+    placeholder: |
+       Example: 
+       - MacOS Sierra, 
+       - Windows 10, 
+       - Linux (Ubuntu, Debian etc)
+       - ...
+    validations:
+      required: true
   - type: textarea
     id: additional
     attributes:
