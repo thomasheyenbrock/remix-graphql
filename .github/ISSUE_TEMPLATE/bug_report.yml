@@ -68,16 +68,6 @@ body:
         to the following link: https://docs.github.com/en/github/writing-on-github/working-with-advanced-formatting/attaching-files
       placeholder: |
         You can drag your video or image files inside of this editor ↓
-  - type: textarea
-    id: platform
-    attributes:
-      label: Platform
-      value: |
-        - OS: [e.g. macOS, Windows, Linux]
-        - Browser: [e.g. Chrome, Safari, Firefox]
-        - Version: [e.g. 91.1]
-    validations:
-      required: true
   - type: input
     id: javascript_runtime_version
     attributes:
