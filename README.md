@@ -93,7 +93,7 @@ request! Here's a complete and working example of how it works:
 // app/routes/index.tsx
 import type { GraphQLError } from "graphql";
 import { Form } from "remix";
-import type { ActionFunction, LoaderFunction } from "remix";
+import type { ActionFunction, LoaderFunction } from "@remix-run/node";;
 import { processRequestWithGraphQL } from "remix-graphql/index.server";
 
 // Import your schema from whereever you export it
@@ -312,7 +312,7 @@ both cases `remix-graphql` helps you with that!
 ```tsx
 // app/routes/$username.tsx
 import type { GraphQLError } from "graphql";
-import type { LoaderFunction } from "remix";
+import type { LoaderFunction } from "@remix-run/node";
 import { sendGraphQLRequest } from "remix-graphql/index.server";
 
 const LOAD_USER_QUERY = /* GraphQL */ `
@@ -370,7 +370,7 @@ that whatever you need in your loader.
 
 ```tsx
 import { json } from "remix";
-import type { LoaderFunction } from "remix";
+import type { LoaderFunction } from "@remix-run/node";
 import { sendGraphQLRequest } from "remix-graphql/index.server";
 
 const LOAD_USER_QUERY = /* GraphQL */ `
