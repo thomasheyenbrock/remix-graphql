@@ -410,8 +410,8 @@ supports both GET and POST requests!
 ```ts
 // app/routes/graphql.ts
 import {
-  createActionFunction,
-  createLoaderFunction,
+  getActionFunction,
+  getLoaderFunction,
 } from "remix-graphql/index.server";
 import type { DeriveStatusCodeFunction } from "remix-graphql/index.server";
 
@@ -419,7 +419,7 @@ import type { DeriveStatusCodeFunction } from "remix-graphql/index.server";
 import { schema } from "~/graphql/schema";
 
 // Handles GET requests
-export const loader = createLoaderFunction({
+export const loader = getLoaderFunction({
   // Provide your schema.
   schema,
   // Optionally pass an object with properties that should be included in the
@@ -431,7 +431,7 @@ export const loader = createLoaderFunction({
 });
 
 // Handles POST requests
-export const action = createActionFunction({
+export const action = getActionFunction({
   // Provide your schema.
   schema,
   // Optionally pass an object with properties that should be included in the
@@ -501,4 +501,4 @@ function redirect(
 Note that this function is only part of the context object when handling
 GraphQL requests in UI routes, i.e. when using `processRequestWithGraphQL`.
 It is _NOT_ part of the context object when handling GraphQL requests in a
-resource route, i.e. when using `createActionFunction` or `createLoaderFunction`.
+resource route, i.e. when using `getActionFunction` or `getLoaderFunction`.
