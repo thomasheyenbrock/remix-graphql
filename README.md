@@ -9,7 +9,7 @@ you with:
 
 - Handling loader and action requests using GraphQL queries and mutations
   - You can define a local schema and resolvers to handle the request
-  - You can also run perform GraphQL requests again a remote API
+  - You can also run perform GraphQL requests against a remote API
 - Setting up a GraphQL API as a [resource route](https://remix.run/docs/en/v1/guides/resource-routes)
 
 And here are some cool ideas what it might do as well in the future:
